@@ -25,6 +25,13 @@ def get_api_key():
 
 def build_request_body(prompt, temperature, max_tokens):
     """API에 보낼 JSON 본문(body)을 만든다."""
+    generation_config = {
+        "maxOutputTokens": max_tokens,   # 답변 최대 길이
+    }
+    # 사용자가 --temperature를 직접 지정했을 때만 넣는다
+    if temperature is not None:
+        generation_config["temperature"] = temperature
+
     body = {
         "contents": [
             {
@@ -32,10 +39,7 @@ def build_request_body(prompt, temperature, max_tokens):
                 "parts": [{"text": prompt}],
             }
         ],
-        "generationConfig": {
-            "temperature": temperature,      # 답변의 무작위성(창의성)
-            "maxOutputTokens": max_tokens,   # 답변 최대 길이
-        },
+        "generationConfig": generation_config,
     }
     return body
 
@@ -43,7 +47,8 @@ def build_request_body(prompt, temperature, max_tokens):
 def explain_http_error(status_code):
     """HTTP 상태 코드를 사람이 이해하기 쉬운 원인 설명으로 바꾼다."""
     if status_code == 400:
-        return "요청 형식이 잘못되었습니다. (API 키, 모델 이름, 파라미터 값을 확인하세요)"
+        return "요청 형식이 잘못되었습니다. (API 키, 모델 이름, 파라미터 값을 확인하세요, " \
+        "최신 모델은 --temperature를 지원하지 않을 수 있습니다))"
     if status_code == 401 or status_code == 403:
         return "인증 실패입니다. API 키가 올바른지 확인하세요."
     if status_code == 404:
@@ -56,7 +61,17 @@ def explain_http_error(status_code):
 
 
 def extract_text(data):
-    """응답 JSON에서 AI가 쓴 글자만 꺼낸다."""
+    """응답 JSON에서 AI가 쓴 글자만 꺼낸다.
+    응답 모양:
+    {
+      "candidates": [
+        {
+          "content": {"parts": [{"text": "여기가 AI 답변"}]},
+          "finishReason": "STOP"
+        }
+      ]
+    }
+    """
     candidates = data.get("candidates")
     if candidates is None or len(candidates) == 0:
         # 안전 필터 등으로 답변이 차단된 경우
