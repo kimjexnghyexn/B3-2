@@ -118,3 +118,28 @@ feat: AI 기반 커밋 메시지 자동 생성 기능 추가
 
 """
     return prompt + build_context(status_text, diff_text, extra_note)
+
+def build_fix_prompt(previous_answer, problems):
+    """이전 답변과 문제 목록을 주고, 고친 버전을 다시 요청하는 프롬프트를 만든다.
+ 
+    diff 전체를 다시 보내지 않고 '이전 답 + 문제 목록'만 보내므로
+    처음부터 다시 생성하는 것보다 토큰(비용)이 적게 든다.
+    """
+    problem_text = ""
+    for problem in problems:
+        problem_text = problem_text + "- " + problem + "\n"
+ 
+    prompt = """아래 [이전 답변]은 정해진 형식 규칙을 일부 지키지 않았어,
+[발견된 문제]를 모두 고쳐서 다시 작성해줘.
+ 
+## 규칙
+1. 이전 답변과 같은 구분 표시(===SUMMARY=== 등)를 그대로 사용한다.
+2. 내용은 최대한 유지하고, 문제가 된 부분만 고친다.
+3. 고친 결과만 출력하고, 설명이나 인사말은 쓰지 않는다.
+4. 마크다운 코드블록(```)으로 감싸지 않는다.
+ 
+[발견된 문제]
+""" + problem_text + """
+[이전 답변]
+""" + previous_answer
+    return prompt
