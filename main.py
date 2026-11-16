@@ -4,9 +4,10 @@ import sys
 import ai_client
 import git_utils
 
-DEFAULT_MODEL = "gemini-2.5-flash"
-DEFAULT_TEMPERATURE = 0.3
-DEFAULT_MAX_TOKENS = 1024
+import prompts
+
+DEFAULT_MODEL = "gemini-3.8-flash"
+DEFAULT_MAX_TOKENS = 4096
 
 LINE = "=" * 60
 
@@ -16,16 +17,19 @@ def build_parser():
     parser.add_argument("command", choices=["commit", "pr"])
     parser.add_argument("--model", default=DEFAULT_MODEL,
                         help="Gemini 모델 (기본값: " + DEFAULT_MODEL + ")")
-    parser.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE,
-                        help="0.0~2.0, 낮을수록 일관된 결과")
+    parser.add_argument("--temperature", type=float, default=None,
+                        help="0.0~2.0, 지정하지 않을 시 모델 기본값 사용")
     parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS,
                         help="AI 답변 최대 토큰 수")
+    parser.add_argument("--lang", choices=["ko", "en"], default="ko",
+                        help="결과 언어 (기본값: ko)")
     return parser
 
 
 def check_options(args):
-    if args.temperature < 0.0 or args.temperature > 2.0:
-        print("[오류] --temperature 는 0.0 ~ 2.0 사이여야 합니다.")
+    if args.temperature is not None:
+        if args.temperature < 0.0 or args.temperature > 2.0:
+            print("[오류] --temperature 는 0.0 ~ 2.0 사이여야 합니다.")
         sys.exit(1)
     if args.max_tokens <= 0:
         print("[오류] --max-tokens 는 1 이상이어야 합니다.")
@@ -51,12 +55,10 @@ def main():
 
     diff_text = git_utils.get_diff()
 
-    # 임시 프롬프트 (3단계에서 prompts.py로 교체 예정)
     if args.command == "commit":
-        request = "다음 git 변경 사항을 보고 커밋 메시지를 작성해줘. 제목 1줄과 불릿 본문으로."
+        prompt = prompts.build_commit_prompt(status_text, diff_text, args.lang, "")
     else:
-        request = "다음 git 변경 사항을 보고 PR 제목과 본문을 작성해줘."
-    prompt = request + "\n\n[git status]\n" + status_text + "\n[git diff]\n" + diff_text
+        prompt = prompts.build_pr_prompt(status_text, diff_text, args.lang, "")
 
     api_call_count = 0
     result = ai_client.call_gemini(prompt, args.model, args.temperature, args.max_tokens)
