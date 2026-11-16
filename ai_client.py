@@ -118,9 +118,9 @@ def call_gemini(prompt, model, temperature, max_tokens):
     # 3) 요청 전송 + 네트워크 예외 처리 (서버에 도착도 못 한 경우)
     print("[LOG] AI API 호출 중... (model=" + model + ")")
     try:
-        response = requests.post(url, headers=headers, json=body, timeout=60)
+        response = requests.post(url, headers=headers, json=body, timeout=120)
     except requests.exceptions.Timeout:
-        print("[오류] 요청 시간(60초)이 초과되었습니다. 네트워크 상태를 확인하세요.")
+        print("[오류] 요청 시간(120초)이 초과되었습니다. 네트워크 상태를 확인하세요.")
         sys.exit(1)
     except requests.exceptions.ConnectionError:
         print("[오류] Gemini 서버에 연결할 수 없습니다. 인터넷 연결을 확인하세요.")
