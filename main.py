@@ -8,6 +8,8 @@ import prompts
 
 import validator
 
+import safety
+
 DEFAULT_MODEL = "gemini-3.5-flash-lite"
 DEFAULT_MAX_TOKENS = 4096
 
@@ -26,6 +28,8 @@ def build_parser():
                         help="AI 답변 최대 토큰 수")
     parser.add_argument("--lang", choices=["ko", "en"], default="ko",
                         help="결과 언어 (기본값: ko)")
+    parser.add_argument("--safe-mode", action="store_true",
+                        help="API 키, 이메일, 비밀번호 등을 ***MASKED*** 로 가린 뒤 전송")
     return parser
 
 
@@ -66,12 +70,17 @@ def main():
     diff_text = git_utils.get_diff()
     changed_files = git_utils.get_changed_files(status_text)
 
+    if args.safe_mode:
+        diff_text, diff_count = safety.mask_secrets(diff_text)
+        status_text, status_count = safety.mask_secrets(status_text)
+        print("[SAFE] 민감정보 마스킹 " + str(diff_count + status_count) + "건")
+    
     if args.command == "commit":
         prompt = prompts.build_commit_prompt(status_text, diff_text, args.lang, "")
     else:
         prompt = prompts.build_pr_prompt(status_text, diff_text, args.lang, "")
-
-        # AI API 호출 (1차)
+        
+    # AI API 호출 (1차)
     api_call_count = 0
     ai_text = ai_client.call_gemini(prompt, args.model, args.temperature, args.max_tokens)
     api_call_count = api_call_count + 1
