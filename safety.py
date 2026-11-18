@@ -38,8 +38,7 @@ def mask_secrets(text):
     """
     total_count = 0
 
-    # 1) '이름 = 값' 형태를 먼저 가린다 (같은 값을 두 번 세지 않도록 먼저 처리)
-    # \1 = 첫 번째 괄호 부분(이름과 =)을 그대로 두라는 뜻
+    # 1) '이름 = 값' 형태를 먼저 가린다
     # flags=re.IGNORECASE : 대소문자 구분 없이 (PASSWORD, Password 모두)
     result = re.subn(ASSIGNMENT_PATTERN, r"\1" + MASK, text, flags=re.IGNORECASE)
     text = result[0]

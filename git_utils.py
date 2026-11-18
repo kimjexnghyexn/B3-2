@@ -15,7 +15,7 @@ def run_git(args):
     try:
         result = subprocess.run(
             ["git"] + args,
-            capture_output=True,   # 터미널에 찍힐 결과를 붙잡는다
+            capture_output=True,   # 터미널에 출력하지않고 변수로 처리
             text=True,             # bytes가 아니라 문자열(str)로 받는다
             encoding="utf-8",      # 한글이 깨지지 않도록 UTF-8로 해석
             errors="replace",      # 해석이 안 되는 글자는 ?로 바꿔서 프로그램이 죽지 않게
@@ -27,6 +27,7 @@ def run_git(args):
     # returncode가 0이면 성공, 0이 아니면 실패
     if result.returncode != 0:
         return None
+    # 정상 출력을 리턴
     return result.stdout
 
 
@@ -94,22 +95,3 @@ def get_diff():
     if unstaged.strip() != "":
         diff_text = diff_text + "### Unstaged changes (git add 안 된 변경)\n" + unstaged + "\n"
     return diff_text
-
-
-# 이 파일만 단독으로 실행했을 때 테스트용: python3 git_utils.py
-if __name__ == "__main__":
-    if not is_git_repo():
-        print("Git 저장소가 아닙니다.")
-        sys.exit(1)
-
-    status = get_status()
-    if status.strip() == "":
-        print("변경 사항이 없습니다.")
-        sys.exit(0)
-
-    print("=== git status ===")
-    print(status)
-    print("=== 변경된 파일 목록 ===")
-    print(get_changed_files(status))
-    print("=== git diff ===")
-    print(get_diff())
