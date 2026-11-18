@@ -37,7 +37,7 @@ def check_options(args):
     if args.temperature is not None:
         if args.temperature < 0.0 or args.temperature > 2.0:
             print("[오류] --temperature 는 0.0 ~ 2.0 사이여야 합니다.")
-        sys.exit(1)
+            sys.exit(1)
     if args.max_tokens <= 0:
         print("[오류] --max-tokens 는 1 이상이어야 합니다.")
         sys.exit(1)
